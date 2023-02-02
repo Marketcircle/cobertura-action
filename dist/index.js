@@ -19668,6 +19668,8 @@ async function pullRequestInfo(payload = {}) {
     commit = payload.after;
   }
 
+  console.log(`PR: ${pullRequestNumber}, Commit: ${commit}`);
+
   return { pullRequestNumber, commit };
 }
 
