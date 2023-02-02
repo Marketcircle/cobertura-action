@@ -19628,6 +19628,9 @@ async function addCheck(body, reportName, sha, conclusion) {
 }
 
 async function listChangedFiles(pullRequestNumber) {
+  if (!pullRequestNumber) {
+    return [];
+  }
   const files = await client.rest.pulls.listFiles({
     pull_number: pullRequestNumber,
     ...github.context.repo,
@@ -19666,14 +19669,8 @@ async function pullRequestInfo(payload = {}) {
     commit = pullRequest.head.sha;
   } else if (payload.after) {
     commit = payload.after;
-    const { data } = await client.rest.pulls.list({
-      ...github.context.repo,
-      state: "open",
-    });
-    pullRequestNumber = data
-      .filter((d) => d.head.sha === commit)
-      .reduce((n, d) => d.number, "");
   }
+
   console.log(`PR: ${pullRequestNumber}, Commit: ${commit}`);
 
   return { pullRequestNumber, commit };
