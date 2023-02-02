@@ -324,8 +324,14 @@ async function pullRequestInfo(payload = {}) {
     commit = pullRequest.head.sha;
   } else if (payload.after) {
     commit = payload.after;
+    const { data } = await client.rest.pulls.list({
+      ...github.context.repo,
+      state: "open",
+    });
+    pullRequestNumber = data
+      .filter((d) => d.head.sha === commit)
+      .reduce((n, d) => d.number, "");
   }
-
   console.log(`PR: ${pullRequestNumber}, Commit: ${commit}`);
 
   return { pullRequestNumber, commit };
