@@ -85,7 +85,9 @@ async function action(payload) {
     await addComment(pullRequestNumber, comment, reportName);
   }
 
-  const annotations = await generate_annotations(reports);
+  const annotations = await generate_annotations(reports, {
+    filteredFiles: changedFiles,
+  });
 
   await addCheck(
     comment,
@@ -257,7 +259,8 @@ function markdownReport(reports, commit, options) {
   return output;
 }
 
-async function generate_annotations(reports) {
+async function generate_annotations(reports, options) {
+  const { filteredFiles = null } = options || {};
   let annotations = [];
   for (const report of reports) {
     const folder = reports.length <= 1 ? "" : ` ${report.folder}`;
