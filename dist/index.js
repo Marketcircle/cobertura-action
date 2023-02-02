@@ -19391,7 +19391,15 @@ async function action(payload) {
   const onlyChangedFiles = JSON.parse(
     core.getInput("only_changed_files", { required: true })
   );
-  const reportName = core.getInput("report_name", { required: false });
+  let reportName = core.getInput("report_name", { required: false });
+
+  if (!reportName) {
+    if (pullRequestNumber) {
+      reportName = `Coverage Report for PR #${pullRequestNumber}`;
+    } else {
+      reportName = "Commit Coverage Report";
+    }
+  }
 
   const changedFiles = onlyChangedFiles
     ? await listChangedFiles(pullRequestNumber)
@@ -19418,11 +19426,15 @@ async function action(payload) {
   if (pullRequestNumber) {
     await addComment(pullRequestNumber, comment, reportName);
   }
+
+  const annotations = await generate_annotations(reports);
+
   await addCheck(
     comment,
     reportName,
     commit,
-    failBelowThreshold ? (belowThreshold ? "failure" : "success") : "neutral"
+    failBelowThreshold ? (belowThreshold ? "failure" : "success") : "neutral",
+    annotations
   );
 
   if (failBelowThreshold && belowThreshold) {
@@ -19587,6 +19599,27 @@ function markdownReport(reports, commit, options) {
   return output;
 }
 
+async function generate_annotations(reports) {
+  let annotations = [];
+  for (const report of reports) {
+    const folder = reports.length <= 1 ? "" : ` ${report.folder}`;
+    for (const file of report.files.filter(
+      (file) => filteredFiles == null || filteredFiles.includes(file.filename)
+    )) {
+      file.missing.forEach((line) => {
+        annotations.push({
+          path: file.filename,
+          start_line: line[0],
+          end_line: line[1],
+          annotation_level: "warning",
+          message: `Coverage is missing for lines ${line[0]}-${line[1]}`,
+        });
+      });
+    }
+    return annotations;
+  }
+}
+
 async function addComment(pullRequestNumber, body, reportName) {
   const comments = await client.rest.issues.listComments({
     issue_number: pullRequestNumber,
@@ -19611,7 +19644,7 @@ async function addComment(pullRequestNumber, body, reportName) {
   }
 }
 
-async function addCheck(body, reportName, sha, conclusion) {
+async function addCheck(body, reportName, sha, conclusion, annotations) {
   const checkName = reportName ? reportName : "coverage";
 
   await client.rest.checks.create({
@@ -19622,6 +19655,7 @@ async function addCheck(body, reportName, sha, conclusion) {
     output: {
       title: checkName,
       summary: body,
+      annotations: annotations,
     },
     ...github.context.repo,
   });
@@ -19682,6 +19716,7 @@ module.exports = {
   addComment,
   addCheck,
   listChangedFiles,
+  generate_annotations,
 };
 
 
