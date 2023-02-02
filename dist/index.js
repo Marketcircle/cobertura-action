@@ -19612,8 +19612,8 @@ async function generate_annotations(reports, options) {
       file.missing.forEach((line) => {
         annotations.push({
           path: file.filename,
-          start_line: line[0],
-          end_line: line[1],
+          start_line: parseInt(line[0]),
+          end_line: parseInt(line[1]),
           annotation_level: "warning",
           message: `Coverage is missing for lines ${line[0]}-${line[1]}`,
         });
