@@ -94,7 +94,7 @@ async function action(payload) {
     reportName,
     commit,
     failBelowThreshold ? (belowThreshold ? "failure" : "success") : "neutral",
-    annotations
+    []
   );
 
   if (failBelowThreshold && belowThreshold) {
@@ -377,5 +377,4 @@ module.exports = {
   addComment,
   addCheck,
   listChangedFiles,
-  generate_annotations,
 };
